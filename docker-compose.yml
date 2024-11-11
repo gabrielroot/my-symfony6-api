@@ -1,0 +1,62 @@
+version: "3"
+
+services:
+    app:
+        build:
+            context: .docker/php
+            args:
+                TIMEZONE: ${TIMEZONE}
+        volumes:
+            - ./:/var/www/symfony:cached
+            - symfony_app_var:/var/www/symfony/var
+            - symfony_app_vendor:/var/www/symfony/vendor
+        networks:
+            - symfony_app
+
+    nginx:
+        build:
+            context: .docker/nginx
+        volumes:
+            - ./:/var/www/symfony:cached
+            - symfony_app_var:/var/www/symfony/var
+            - symfony_app_vendor:/var/www/symfony/vendor
+        ports:
+            - 8090:80
+        networks:
+            - symfony_app
+        env_file:
+            - .docker/.env.nginx.local
+
+    db:
+        image: mysql:8.0.33
+        platform: linux/x86_64
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=mytour
+            - MYSQL_ROOT_HOST=%
+        volumes:
+            - ./.docker/mysql/data:/var/lib/mysql
+        ports:
+            - 3306:3306
+        networks:
+            - symfony_app
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:5.2.1
+        ports:
+            - 8080:80
+        environment:
+            - PMA_HOST=db
+        depends_on:
+            - db
+        networks:
+            - symfony_app
+
+volumes:
+    symfony_app_var:
+    symfony_app_vendor:
+    db_app:
+
+networks:
+    symfony_app:
