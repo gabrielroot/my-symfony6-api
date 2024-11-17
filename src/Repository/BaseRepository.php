@@ -23,7 +23,7 @@ abstract class BaseRepository extends ServiceEntityRepository
         $this->entity = new $className;
     }
 
-    public function save(IAudit|UserInterface $entity, bool $flush = true): void
+    public function save(IAudit $entity, bool $flush = true): void
     {
         $this->getEntityManager()->persist($entity);
 
