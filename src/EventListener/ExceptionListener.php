@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 
 class ExceptionListener
@@ -22,14 +23,17 @@ class ExceptionListener
         // set the content-type to text to avoid XSS issues
         $response->headers->set('Content-Type', 'application/json; charset=utf-8');
 
-        // HttpExceptionInterface is a special type of exception that
-        // holds status code and header details
-        if ($exception instanceof HttpExceptionInterface) {
-            $response->setStatusCode($exception->getStatusCode());
-            $response->headers->replace($exception->getHeaders());
-        } elseif ($exception instanceof InvalidArgumentException) {
+         if ($exception instanceof InvalidArgumentException) {
             $message = "Requisição mal formada, favor rever os parâmetros e tentar novamente.";
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($exception instanceof NotFoundHttpException) {
+            $message = "O recurso que você tentou acessar não foi encontrado.";
+            $response->setStatusCode(Response::HTTP_NOT_FOUND);
+        } elseif ($exception instanceof HttpExceptionInterface) {
+            // HttpExceptionInterface is a special type of exception that
+            // holds status code and header details
+            $response->setStatusCode($exception->getStatusCode());
+            $response->headers->replace($exception->getHeaders());
         } else {
             $response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
         }
