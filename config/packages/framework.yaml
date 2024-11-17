@@ -17,6 +17,12 @@ framework:
     php_errors:
         log: true
 
+    form:
+        csrf_protection:
+            enabled: false
+
+    validation: { enabled: true }
+
 when@test:
     framework:
         test: true

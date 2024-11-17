@@ -26,6 +26,18 @@
             "migrations/.gitignore"
         ]
     },
+    "friendsofsymfony/rest-bundle": {
+        "version": "3.7",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "3.0",
+            "ref": "3762cc4e4f2d6faabeca5a151b41c8c791bd96e5"
+        },
+        "files": [
+            "config/packages/fos_rest.yaml"
+        ]
+    },
     "jms/serializer-bundle": {
         "version": "5.5",
         "recipe": {
@@ -103,17 +115,28 @@
             "config/routes.yaml"
         ]
     },
-    "symfony/security-bundle": {
+    "symfony/uid": {
         "version": "6.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "6.4",
-            "ref": "2ae08430db28c8eb4476605894296c82a642028f"
+            "version": "6.2",
+            "ref": "d294ad4add3e15d7eb1bae0221588ca89b38e558"
         },
         "files": [
-            "config/packages/security.yaml",
-            "config/routes/security.yaml"
+            "config/packages/uid.yaml"
+        ]
+    },
+    "symfony/validator": {
+        "version": "6.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "5.3",
+            "ref": "c32cfd98f714894c4f128bb99aa2530c1227603c"
+        },
+        "files": [
+            "config/packages/validator.yaml"
         ]
     }
 }
