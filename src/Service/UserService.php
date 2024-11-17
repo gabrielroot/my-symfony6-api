@@ -4,25 +4,26 @@ namespace App\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
-class UserService
+class UserService extends AbstractService
 {
     private $userRepository;
-    private UserPasswordHasherInterface $hasher;
 
-    public function __construct(
-        UserPasswordHasherInterface $hasher,
-        UserRepository $userRepository)
+    public function __construct(UserRepository $userRepository)
     {
+        parent::__construct($userRepository);
         $this->userRepository = $userRepository;
-        $this->hasher = $hasher;
     }
 
+    /**
+     * @param User $user
+     * @param bool $flush
+     * @return void
+     * @throws UniqueConstraintViolationException
+     */
     public function createUser(User $user, bool $flush = true): void
     {
-        $user->setPassword($this->hasher->hashPassword($user, $user->getPassword()));
-
-        $this->userRepository->save(entity: $user, flush: $flush);
+        $this->save(entity: $user, flush: $flush);
     }
 }
