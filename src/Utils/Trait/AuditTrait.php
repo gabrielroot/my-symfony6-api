@@ -21,11 +21,6 @@ trait AuditTrait
     #[Serializer\Groups([SerializerGroups::AUDIT])]
     protected ?DateTime $deletedAt = null;
 
-    public function __construct()
-    {
-        $this->createdAt = new DateTime();
-    }
-
     public function getCreatedAt(): DateTime
     {
         return $this->createdAt;
