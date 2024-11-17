@@ -5,9 +5,9 @@ namespace App\Repository;
 use App\Interface\IAudit;
 use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<IAudit>
@@ -100,6 +100,14 @@ abstract class BaseRepository extends ServiceEntityRepository
             ->newCriteriaActiveQb()
             ->getQuery()
             ->getResult();
+    }
+
+    public function queryAll(array $criteria = [], $onlyActive = true, array $orderBy = []): Query
+    {
+        $qb = $this->newCriteriaActiveQb($onlyActive);
+        $this->addCriteriaAndOrder($qb, $criteria, $orderBy);
+
+        return $qb->getQuery();
     }
 
     public function newCriteriaActiveQb(bool $onlyActive = true): QueryBuilder

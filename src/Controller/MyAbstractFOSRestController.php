@@ -2,42 +2,51 @@
 
 namespace App\Controller;
 
+use App\Repository\BaseRepository;
 use App\Utils\Enum\SerializerGroups;
 use FOS\RestBundle\Context\Context;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\View\View;
+use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 abstract class MyAbstractFOSRestController extends AbstractFOSRestController
 {
+    protected int $pageLimit = 5;
+
     public function jsonResponse(
         $data,
         string $message = "",
         string $internalMessage = "",
         bool $success = true,
         int $statusCode = Response::HTTP_OK,
-        $serializerGroups = [SerializerGroups::DEFAULT, SerializerGroups::AUDIT])
+        array $serializerGroups = [SerializerGroups::AUDIT]): Response
     {
-        $responseData = [];
-        if ($internalMessage) {
-            $responseData =  array_merge(['internalMessage' => $internalMessage]);
-        }
+        $responseData = ['success' => $success];
+        $responseData = ($internalMessage) ?  array_merge(['internalMessage' => $internalMessage]) : $responseData;
+        $responseData = ($message) ?  array_merge(['message' => $message], $responseData) : $responseData;
 
-        if ($message) {
-            $responseData = array_merge(['message' => $message]);
+        if ($data instanceof SlidingPagination) {
+            $responseData = array_merge($responseData, [
+                'data' => $data->getItems(),
+                'page' => $data->getCurrentPageNumber(),
+                'lastPage' => $data->getPageCount(),
+                'hasNextPage' => $data->getCurrentPageNumber() < $data->getPageCount(),
+                'hasPreviewsPage' => $data->getCurrentPageNumber() > 1,
+                'perPage' => $data->getItemNumberPerPage(),
+                'totalItemCount' => $data->getTotalItemCount(),
+                'sortDirection' => $data->getDirection()
+            ]);
+        } else {
+            $responseData = array_merge($responseData, ['data' => $data]);
         }
-
-        if ($data) {
-            $responseData = array_merge(['data' => $data], $responseData);
-        }
-
-        $responseData = array_merge(['success' => $success], $responseData);
 
         $view = $this->serializeObject(
             object: $responseData,
             statusCode: $statusCode,
-            serializerGroups: $serializerGroups);
+            serializerGroups: array_merge([SerializerGroups::DEFAULT], $serializerGroups));
 
         return $this->handleView($view);
     }
@@ -45,7 +54,7 @@ abstract class MyAbstractFOSRestController extends AbstractFOSRestController
     public function serializeObject(
         $object,
         int $statusCode = Response::HTTP_OK,
-        array $serializerGroups = [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]): View
+        array $serializerGroups = []): View
     {
         $context = new Context();
         $context

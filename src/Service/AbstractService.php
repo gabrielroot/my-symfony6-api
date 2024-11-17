@@ -4,10 +4,11 @@ namespace App\Service;
 
 use App\Interface\IAudit;
 use App\Repository\BaseRepository;
+use Doctrine\ORM\Query;
 
 abstract class AbstractService
 {
-    private baseRepository $repository;
+    private BaseRepository $repository;
 
     public function __construct(
         BaseRepository $repository)
@@ -56,5 +57,10 @@ abstract class AbstractService
         bool $onlyActive = true)
     {
         return $this->repository->findOneBy($criteria, $orderBy, $onlyActive);
+    }
+
+    public function queryAll(array $criteria = [], $onlyActive = true, array $orderBy = []): Query
+    {
+        return $this->repository->queryAll($criteria, $onlyActive, $orderBy);
     }
 }

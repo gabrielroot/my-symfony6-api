@@ -54,6 +54,8 @@ trait AuditTrait
         return $this;
     }
 
+    #[Serializer\VirtualProperty]
+    #[Serializer\Groups([SerializerGroups::DEFAULT])]
     public function isActive(): bool
     {
         return is_null($this->deletedAt);

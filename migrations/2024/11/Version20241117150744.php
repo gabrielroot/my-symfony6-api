@@ -21,7 +21,7 @@ final class Version20241117150744 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('
-            CREATE TABLE `user` (
+            CREATE TABLE `users` (
                 id INT AUTO_INCREMENT NOT NULL, 
                 uuid VARCHAR(255) NOT NULL, 
                 name VARCHAR(180) NOT NULL, 
