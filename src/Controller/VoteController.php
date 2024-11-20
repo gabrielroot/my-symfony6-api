@@ -9,7 +9,6 @@ use App\Exception\TopicNotFromMemberCooperativeException;
 use App\Form\VoteType;
 use App\Service\VoteService;
 use App\Utils\Enum\SerializerGroups;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

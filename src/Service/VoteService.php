@@ -8,6 +8,7 @@ use App\Exception\MemberAlreadyVotedException;
 use App\Exception\SessionClosedToVoteException;
 use App\Exception\TopicNotFromMemberCooperativeException;
 use App\Repository\VoteRepository;
+use App\Utils\Enum\VoteChoice;
 use DateInterval;
 use DateTime;
 
@@ -51,11 +52,11 @@ class VoteService extends AbstractService
         $votesOnTopic = $this->findBy(['topic' => $topic]);
 
         $positiveVotes = array_filter($votesOnTopic, function (Vote $vote){
-            return $vote->getChoice() === 'Sim';
+            return $vote->getChoice() === VoteChoice::POSITIVE;
         });
 
         $negativeVotes = array_filter($votesOnTopic, function (Vote $vote){
-            return $vote->getChoice() === 'Não';
+            return $vote->getChoice() === VoteChoice::NEGATIVE;
         });
 
         return [
