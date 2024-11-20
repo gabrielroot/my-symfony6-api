@@ -3,20 +3,21 @@
 namespace App\Entity;
 
 use App\Interface\IAudit;
+use App\Repository\TopicRepository;
 use App\Repository\UserRepository;
 use App\Utils\Enum\SerializerGroups;
 use App\Utils\Trait\AuditTrait;
 use App\Utils\Trait\UuidTrait;
+use DateTime;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: '`users`')]
-#[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_USERNAME', fields: ['username'])]
-class User implements IAudit
+#[ORM\Entity(repositoryClass: TopicRepository::class)]
+#[ORM\Table(name: 'topics')]
+class Topic implements IAudit
 {
     use AuditTrait, UuidTrait;
 
@@ -29,22 +30,24 @@ class User implements IAudit
     #[Assert\NotBlank]
     #[Assert\Length(max: 180)]
     #[Serializer\Groups([SerializerGroups::DEFAULT])]
-    private ?string $name = null;
+    private string $title;
 
-    #[ORM\Column(length: 180)]
+    #[ORM\Column(type: 'text')]
     #[Assert\NotBlank]
-    #[Assert\Length(max: 180)]
     #[Serializer\Groups([SerializerGroups::DEFAULT])]
-    private ?string $username = null;
+    private ?string $description = null;
+
+    #[ORM\Column(type: 'datetime')]
+    #[Serializer\Groups([SerializerGroups::DEFAULT])]
+    private ?DateTime $closeTime;
 
     #[ORM\ManyToOne(targetEntity: Cooperative::class)]
     #[Assert\NotBlank]
     #[Serializer\MaxDepth(1)]
     #[Serializer\Groups([SerializerGroups::DEPTHS])]
-    private ?Cooperative $cooperative = null;
+    private Cooperative $cooperative;
 
-    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'user')]
-    #[Assert\NotBlank]
+    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'topic')]
     #[Serializer\MaxDepth(1)]
     #[Serializer\Groups([SerializerGroups::DEPTHS])]
     private Collection $votes;
@@ -59,45 +62,51 @@ class User implements IAudit
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function setId(?int $id): Topic
     {
-        return $this->name;
-    }
-
-    public function setName(?string $name): User
-    {
-        $this->name = $name;
+        $this->id = $id;
         return $this;
     }
 
-    public function getUsername(): ?string
+    public function getTitle(): string
     {
-        return $this->username;
+        return $this->title;
     }
 
-    public function setUsername(string $username): static
+    public function setTitle(string $title): Topic
     {
-        $this->username = $username;
-
+        $this->title = $title;
         return $this;
     }
 
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
-    public function getUserIdentifier(): string
+    public function getDescription(): ?string
     {
-        return (string) $this->username;
+        return $this->description;
     }
 
-    public function getCooperative(): ?Cooperative
+    public function setDescription(?string $description): Topic
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    public function getCloseTime(): ?DateTime
+    {
+        return $this->closeTime;
+    }
+
+    public function setCloseTime(?DateTime $closeTime): Topic
+    {
+        $this->closeTime = $closeTime;
+        return $this;
+    }
+
+    public function getCooperative(): Cooperative
     {
         return $this->cooperative;
     }
 
-    public function setCooperative(?Cooperative $cooperative): User
+    public function setCooperative(Cooperative $cooperative): Topic
     {
         $this->cooperative = $cooperative;
         return $this;
@@ -108,7 +117,7 @@ class User implements IAudit
         return $this->votes;
     }
 
-    public function setVotes(Collection $votes): User
+    public function setVotes(Collection $votes): Topic
     {
         $this->votes = $votes;
         return $this;

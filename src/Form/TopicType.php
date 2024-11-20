@@ -3,31 +3,40 @@
 namespace App\Form;
 
 use App\Entity\Cooperative;
-use App\Entity\User;
+use App\Entity\Topic;
 use App\Repository\CooperativeRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class UserType extends AbstractType
+class TopicType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('username', TextType::class, [
+            ->add('description', TextType::class, [
                 'documentation' => [
                     'type' => 'string',
-                    'description' => 'The user unique username.',
-                    'example' => 'john123',
+                    'description' => 'A detailed description about the topic.',
+                    'example' => 'Vote for a new president. The last one was pretty bad.',
                 ]
             ])
-            ->add('name', TextType::class, [
+            ->add('title', TextType::class, [
                 'documentation' => [
                     'type' => 'string',
-                    'description' => 'The user name.',
-                    'example' => 'john',
+                    'description' => 'The topic name.',
+                    'example' => 'Vote for a new president.',
+                ]
+            ])
+            ->add('closeTime', DateTimeType::class, [
+                'widget' => 'single_text',
+                'documentation' => [
+                    'type' => 'datetime',
+                    'description' => 'The topic expiration time.',
+                    'example' => '2024-11-20T16:03:00',
                 ]
             ])
             ->add('cooperative_uuid', EntityType::class, [
@@ -40,7 +49,7 @@ class UserType extends AbstractType
                 'documentation' => [
                     'type' => 'string',
                     'description' => 'Cooperative to be associated to.',
-                    'example' => 'uuid-uuid-uuid-uuid',
+                    'example' => 'uuid-uuid-uuid',
                 ]
             ])
         ;
@@ -49,7 +58,7 @@ class UserType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => User::class
+            'data_class' => Topic::class
         ]);
     }
 }

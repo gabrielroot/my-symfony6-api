@@ -6,4 +6,6 @@ enum SerializerGroups
 {
     const DEFAULT = 'default';
     const AUDIT = 'audit';
+
+    const DEPTHS = 'depths';
 }

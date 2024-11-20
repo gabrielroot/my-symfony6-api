@@ -76,6 +76,14 @@ abstract class BaseRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    /**
+     * @param array $criteria
+     * @param array|null $orderBy
+     * @param int|null $limit
+     * @param int|null $offset
+     * @param bool $onlyActive
+     * @return array|object[]|IAudit[]
+     */
     public function findBy(
         array $criteria,
         array $orderBy = null,

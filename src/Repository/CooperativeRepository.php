@@ -2,17 +2,17 @@
 
 namespace App\Repository;
 
-use App\Entity\User;
+use App\Entity\Cooperative;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<User>
+ * @extends ServiceEntityRepository<Cooperative>
  */
-class UserRepository extends BaseRepository
+class CooperativeRepository extends BaseRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, User::class);
+        parent::__construct($registry, Cooperative::class);
     }
 }

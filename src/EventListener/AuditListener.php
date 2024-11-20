@@ -22,6 +22,7 @@ class AuditListener
     private function setAuditTrait(LifecycleEventArgs $args): void
     {
         $entity = $args->getObject();
+
         if (is_subclass_of($entity, IAudit::class)) {
             $this->setDateTime($entity);
         }
