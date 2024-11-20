@@ -19,7 +19,7 @@ use Nelmio\ApiDocBundle\Attribute\Model;
 class UsersController extends MyAbstractFOSRestController
 {
     /**
-     * List the active users.
+     * Lists the active users.
      *
      * This call all the active users, paginated.
      */
@@ -57,7 +57,7 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/', name: 'list', methods: ['GET'])]
-    public function getUsersAction(
+    public function index(
         Request $request,
         UserService $userService,
         PaginatorInterface $paginator): Response
@@ -131,12 +131,45 @@ class UsersController extends MyAbstractFOSRestController
             statusCode: Response::HTTP_BAD_REQUEST);
     }
 
+    /**
+     * Search for a specific user.
+     *
+     * Show a user detailed.
+     */
+    #[OA\Response(
+        response: Response::HTTP_OK,
+        description: 'Returns when the user was found.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        ref: new Model(
+                            type: User::class,
+                            groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
+                        )
+                    )
+                )
+            ],
+            type: 'object'
+
+        )
+    )]
+    #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
+    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
     public function show(User $user): Response
     {
         return $this->jsonResponse($user);
     }
 
+    /**
+     * Update a specific user.
+     *
+     * Look for an active user and update it.
+     */
     #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
     #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
@@ -169,6 +202,11 @@ class UsersController extends MyAbstractFOSRestController
             statusCode: Response::HTTP_BAD_REQUEST);
     }
 
+    /**
+     * Delete a specific user.
+     *
+     * Look for an active user and delete it.
+     */
     #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]

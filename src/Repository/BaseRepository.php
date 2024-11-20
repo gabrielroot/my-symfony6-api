@@ -138,4 +138,14 @@ abstract class BaseRepository extends ServiceEntityRepository
             $qb->addOrderBy("entity.$column", $value);
         }
     }
+
+    public function getOneRandom(bool $onlyActives = false): mixed
+    {
+        return $this->newCriteriaActiveQb(false)
+            ->select('DISTINCT entity')
+            ->orderBy('RAND()', 'ASC')
+            ->getQuery()
+            ->setMaxResults(1)
+            ->getSingleResult();
+    }
 }

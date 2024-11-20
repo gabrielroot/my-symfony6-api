@@ -24,7 +24,7 @@ nelmio_api_doc:
                     description: "The field used to sort the results, based on the entity fields."
                     schema:
                         type: "string"
-                        example: "entity.username"
+                        example: "entity.name"
                 paginatorDirection:
                     name: "direction"
                     in: "query"
