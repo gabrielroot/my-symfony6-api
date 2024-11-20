@@ -15,6 +15,12 @@ abstract class AbstractService
     {
         $this->repository = $repository;
     }
+
+    /**
+     * @param IAudit $entity
+     * @param bool $flush
+     * @return void
+     */
     public function save(IAudit $entity, bool $flush = true): void
     {
         $this->repository->save($entity, $flush);
@@ -39,6 +45,15 @@ abstract class AbstractService
         return $this->repository->findAll();
     }
 
+
+    /**
+     * @param array $criteria
+     * @param array|null $orderBy
+     * @param int|null $limit
+     * @param int|null $offset
+     * @param bool $onlyActive
+     * @return array
+     */
     public function findBy(
         array $criteria,
         array $orderBy = null,

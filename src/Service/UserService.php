@@ -15,26 +15,4 @@ class UserService extends AbstractService
         parent::__construct($userRepository);
         $this->userRepository = $userRepository;
     }
-
-    /**
-     * @param User $user
-     * @param bool $flush
-     * @return void
-     * @throws UniqueConstraintViolationException
-     */
-    public function createUser(User $user, bool $flush = true): void
-    {
-        $this->save(entity: $user, flush: $flush);
-    }
-
-    /**
-     * @param User $user
-     * @param bool $flush
-     * @return void
-     * @throws UniqueConstraintViolationException
-     */
-    public function updateUser(User $user, bool $flush = true): void
-    {
-        $this->save(entity: $user, flush: $flush);
-    }
 }

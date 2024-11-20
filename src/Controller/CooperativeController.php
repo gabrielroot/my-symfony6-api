@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
-use App\Form\UserType;
-use App\Service\UserService;
+use App\Entity\Cooperative;
+use App\Form\CooperativeType;
+use App\Service\CooperativeService;
 use App\Utils\Enum\SerializerGroups;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Knp\Component\Pager\PaginatorInterface;
@@ -14,21 +14,21 @@ use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 
-#[OA\Tag(name: 'Users')]
-#[Route('/users', name: 'users_')]
-class UsersController extends MyAbstractFOSRestController
+#[OA\Tag(name: 'Cooperatives')]
+#[Route('/cooperatives', name: 'cooperatives_')]
+class CooperativeController extends MyAbstractFOSRestController
 {
     /**
-     * Lists the active users.
+     * Lists the active cooperatives.
      *
-     * This call all the active users, paginated.
+     * This call all the active cooperatives, paginated.
      */
     #[OA\Parameter(ref: '#/components/parameters/paginatorPage')]
     #[OA\Parameter(ref: '#/components/parameters/paginatorSort')]
     #[OA\Parameter(ref: '#/components/parameters/paginatorDirection')]
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns the users.',
+        description: 'Returns the cooperatives.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
@@ -37,7 +37,7 @@ class UsersController extends MyAbstractFOSRestController
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Cooperative::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -59,11 +59,11 @@ class UsersController extends MyAbstractFOSRestController
     #[Route('/', name: 'list', methods: ['GET'])]
     public function index(
         Request $request,
-        UserService $userService,
+        CooperativeService $cooperativeService,
         PaginatorInterface $paginator): Response
     {
         $pagination = $paginator->paginate(
-            $userService->queryAll(),
+            $cooperativeService->queryAll(),
             $request->query->getInt('page', 1),
             $this->pageLimit);
 
@@ -71,24 +71,24 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Create a new user.
+     * Create a new cooperative.
      *
-     * Just creates a new and fresh user.
+     * Just creates a new and fresh cooperative.
      */
-    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: CooperativeType::class)))]
     #[OA\Response(
         response: Response::HTTP_CREATED,
-        description: 'Returns when the user was successfully created.',
+        description: 'Returns when the cooperative was successfully created.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
-                new OA\Property(property: 'message', type: 'string', example: 'Usuário criado!'),
+                new OA\Property(property: 'message', type: 'string', example: 'Cooperativa criada!'),
                 new OA\Property(
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Cooperative::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -101,25 +101,25 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/', name: 'create', methods: ['POST'])]
-    public function create(Request $request, UserService $userService): Response
+    public function create(Request $request, CooperativeService $cooperativeService): Response
     {
-        $user = new User();
-        $form = $this->createForm(UserType::class, $user);
+        $cooperative = new Cooperative();
+        $form = $this->createForm(CooperativeType::class, $cooperative);
         $form->submit($request->request->all());
 
         if($form->isValid()) {
             try {
-                $userService->save($user);
+                $cooperativeService->save($cooperative);
             } catch (UniqueConstraintViolationException) {
                 return $this->jsonResponse(
-                    data: $user,
-                    message: 'Este username já existe.',
+                    data: $cooperative,
+                    message: 'Já existe uma cooperativa com este nome.',
                     success: false,
                     statusCode: Response::HTTP_BAD_REQUEST);
             }
 
             return $this->jsonResponse(
-                data: $user,
+                data: $cooperative,
                 message: 'Usuário criado!',
                 statusCode: Response::HTTP_CREATED);
         }
@@ -132,13 +132,13 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Search for a specific user.
+     * Search for a specific cooperative.
      *
-     * Show a user detailed.
+     * Show a cooperative detailed.
      */
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns when the user was found.',
+        description: 'Returns when the cooperative was found.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
@@ -147,7 +147,7 @@ class UsersController extends MyAbstractFOSRestController
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Cooperative::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -160,41 +160,41 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
-    public function show(User $user): Response
+    public function show(Cooperative $cooperative): Response
     {
         return $this->jsonResponse(
-            data: $user,
+            data: $cooperative,
             serializerGroups: [SerializerGroups::AUDIT, SerializerGroups::DEPTHS]);
     }
 
     /**
-     * Update a specific user.
+     * Update a specific cooperative.
      *
-     * Look for an active user and update it.
+     * Look for an active cooperative and update it.
      */
-    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: CooperativeType::class)))]
     #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'update', methods: ['PUT'])]
-    public function update(Request $request, UserService $userService, User $user): Response
+    public function update(Request $request, CooperativeService $cooperativeService, Cooperative $cooperative): Response
     {
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(CooperativeType::class, $cooperative);
         $form->submit($request->request->all());
 
         if($form->isValid()) {
             try {
-                $userService->save($user);
+                $cooperativeService->save($cooperative);
             } catch (UniqueConstraintViolationException) {
                 return $this->jsonResponse(
-                    data: $user,
+                    data: $cooperative,
                     message: 'Este username já existe.',
                     success: false,
                     statusCode: Response::HTTP_BAD_REQUEST);
             }
 
-            return $this->jsonResponse($user);
+            return $this->jsonResponse($cooperative);
         }
 
         return $this->jsonResponse(
@@ -205,17 +205,17 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Delete a specific user.
+     * Delete a specific cooperative.
      *
-     * Look for an active user and delete it.
+     * Look for an active cooperative and delete it.
      */
     #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'delete', methods: ['DELETE'])]
-    public function delete(UserService $userService, User $user): Response
+    public function delete(CooperativeService $cooperativeService, Cooperative $cooperative): Response
     {
-        $userService->deleteNow($user);
-        return $this->jsonResponse(data: $user);
+        $cooperativeService->deleteNow($cooperative);
+        return $this->jsonResponse(data: $cooperative);
     }
 }

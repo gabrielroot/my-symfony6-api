@@ -2,9 +2,12 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
-use App\Form\UserType;
-use App\Service\UserService;
+use App\Entity\Vote;
+use App\Exception\MemberAlreadyVotedException;
+use App\Exception\SessionClosedToVoteException;
+use App\Exception\TopicNotFromMemberCooperativeException;
+use App\Form\VoteType;
+use App\Service\VoteService;
 use App\Utils\Enum\SerializerGroups;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Knp\Component\Pager\PaginatorInterface;
@@ -14,21 +17,21 @@ use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 
-#[OA\Tag(name: 'Users')]
-#[Route('/users', name: 'users_')]
-class UsersController extends MyAbstractFOSRestController
+#[OA\Tag(name: 'Votes')]
+#[Route('/votes', name: 'votes_')]
+class VoteController extends MyAbstractFOSRestController
 {
     /**
-     * Lists the active users.
+     * Lists the active votes.
      *
-     * This call all the active users, paginated.
+     * This call all the active votes, paginated.
      */
     #[OA\Parameter(ref: '#/components/parameters/paginatorPage')]
     #[OA\Parameter(ref: '#/components/parameters/paginatorSort')]
     #[OA\Parameter(ref: '#/components/parameters/paginatorDirection')]
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns the users.',
+        description: 'Returns the votes.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
@@ -37,7 +40,7 @@ class UsersController extends MyAbstractFOSRestController
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Vote::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -59,11 +62,11 @@ class UsersController extends MyAbstractFOSRestController
     #[Route('/', name: 'list', methods: ['GET'])]
     public function index(
         Request $request,
-        UserService $userService,
+        VoteService $voteService,
         PaginatorInterface $paginator): Response
     {
         $pagination = $paginator->paginate(
-            $userService->queryAll(),
+            $voteService->queryAll(),
             $request->query->getInt('page', 1),
             $this->pageLimit);
 
@@ -71,24 +74,24 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Create a new user.
+     * Create a new vote.
      *
-     * Just creates a new and fresh user.
+     * Just creates a new and fresh vote.
      */
-    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: VoteType::class)))]
     #[OA\Response(
         response: Response::HTTP_CREATED,
-        description: 'Returns when the user was successfully created.',
+        description: 'Returns when the vote was successfully created.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
-                new OA\Property(property: 'message', type: 'string', example: 'Usuário criado!'),
+                new OA\Property(property: 'message', type: 'string', example: 'Voto enviado!'),
                 new OA\Property(
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Vote::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -101,26 +104,30 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/', name: 'create', methods: ['POST'])]
-    public function create(Request $request, UserService $userService): Response
+    public function create(Request $request, VoteService $voteService): Response
     {
-        $user = new User();
-        $form = $this->createForm(UserType::class, $user);
+        $vote = new Vote();
+        $form = $this->createForm(VoteType::class, $vote);
         $form->submit($request->request->all());
 
         if($form->isValid()) {
             try {
-                $userService->save($user);
-            } catch (UniqueConstraintViolationException) {
+                $voteService->createVote($vote);
+            } catch (
+                MemberAlreadyVotedException
+                |SessionClosedToVoteException
+                |TopicNotFromMemberCooperativeException $exception
+            ) {
                 return $this->jsonResponse(
-                    data: $user,
-                    message: 'Este username já existe.',
+                    data: $vote,
+                    message: $exception->getMessage(),
                     success: false,
                     statusCode: Response::HTTP_BAD_REQUEST);
             }
 
             return $this->jsonResponse(
-                data: $user,
-                message: 'Usuário criado!',
+                data: $vote,
+                message: 'Voto criado!',
                 statusCode: Response::HTTP_CREATED);
         }
 
@@ -132,13 +139,13 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Search for a specific user.
+     * Search for a specific vote.
      *
-     * Show a user detailed.
+     * Show a vote detailed.
      */
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns when the user was found.',
+        description: 'Returns when the vote was found.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
@@ -147,7 +154,7 @@ class UsersController extends MyAbstractFOSRestController
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Vote::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -160,62 +167,10 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
-    public function show(User $user): Response
+    public function show(Vote $vote): Response
     {
         return $this->jsonResponse(
-            data: $user,
+            data: $vote,
             serializerGroups: [SerializerGroups::AUDIT, SerializerGroups::DEPTHS]);
-    }
-
-    /**
-     * Update a specific user.
-     *
-     * Look for an active user and update it.
-     */
-    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
-    #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
-    #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
-    #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
-    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
-    #[Route('/{uuid}', name: 'update', methods: ['PUT'])]
-    public function update(Request $request, UserService $userService, User $user): Response
-    {
-        $form = $this->createForm(UserType::class, $user);
-        $form->submit($request->request->all());
-
-        if($form->isValid()) {
-            try {
-                $userService->save($user);
-            } catch (UniqueConstraintViolationException) {
-                return $this->jsonResponse(
-                    data: $user,
-                    message: 'Este username já existe.',
-                    success: false,
-                    statusCode: Response::HTTP_BAD_REQUEST);
-            }
-
-            return $this->jsonResponse($user);
-        }
-
-        return $this->jsonResponse(
-            data: $this->handleFormErrors($form),
-            message: 'Requisição mal formada.',
-            success: false,
-            statusCode: Response::HTTP_BAD_REQUEST);
-    }
-
-    /**
-     * Delete a specific user.
-     *
-     * Look for an active user and delete it.
-     */
-    #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
-    #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
-    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
-    #[Route('/{uuid}', name: 'delete', methods: ['DELETE'])]
-    public function delete(UserService $userService, User $user): Response
-    {
-        $userService->deleteNow($user);
-        return $this->jsonResponse(data: $user);
     }
 }

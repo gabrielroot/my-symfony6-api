@@ -2,11 +2,15 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
-use App\Form\UserType;
-use App\Service\UserService;
+use App\Entity\Topic;
+use App\Exception\MissingTopicEndTimeException;
+use App\Form\TopicType;
+use App\Service\TopicService;
+use App\Service\VoteService;
 use App\Utils\Enum\SerializerGroups;
+use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,21 +18,21 @@ use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 
-#[OA\Tag(name: 'Users')]
-#[Route('/users', name: 'users_')]
-class UsersController extends MyAbstractFOSRestController
+#[OA\Tag(name: 'Topics')]
+#[Route('/topics', name: 'topics_')]
+class TopicController extends MyAbstractFOSRestController
 {
     /**
-     * Lists the active users.
+     * Lists the active topics.
      *
-     * This call all the active users, paginated.
+     * This call all the active topics, paginated.
      */
     #[OA\Parameter(ref: '#/components/parameters/paginatorPage')]
     #[OA\Parameter(ref: '#/components/parameters/paginatorSort')]
     #[OA\Parameter(ref: '#/components/parameters/paginatorDirection')]
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns the users.',
+        description: 'Returns the topics.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
@@ -37,7 +41,7 @@ class UsersController extends MyAbstractFOSRestController
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Topic::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -59,11 +63,11 @@ class UsersController extends MyAbstractFOSRestController
     #[Route('/', name: 'list', methods: ['GET'])]
     public function index(
         Request $request,
-        UserService $userService,
+        TopicService $topicService,
         PaginatorInterface $paginator): Response
     {
         $pagination = $paginator->paginate(
-            $userService->queryAll(),
+            $topicService->queryAll(),
             $request->query->getInt('page', 1),
             $this->pageLimit);
 
@@ -71,24 +75,24 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Create a new user.
+     * Create a new topic.
      *
-     * Just creates a new and fresh user.
+     * Just creates a new and fresh topic.
      */
-    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: TopicType::class)))]
     #[OA\Response(
         response: Response::HTTP_CREATED,
-        description: 'Returns when the user was successfully created.',
+        description: 'Returns when the topic was successfully created.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
-                new OA\Property(property: 'message', type: 'string', example: 'Usuário criado!'),
+                new OA\Property(property: 'message', type: 'string', example: 'Cooperativa criada!'),
                 new OA\Property(
                     property: 'data',
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Topic::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -101,26 +105,30 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/', name: 'create', methods: ['POST'])]
-    public function create(Request $request, UserService $userService): Response
+    public function create(Request $request, TopicService $topicService): Response
     {
-        $user = new User();
-        $form = $this->createForm(UserType::class, $user);
+        $topic = new Topic();
+        $form = $this->createForm(TopicType::class, $topic);
         $form->submit($request->request->all());
 
         if($form->isValid()) {
             try {
-                $userService->save($user);
+                if (null === $topic->getCloseTime()) {
+                    $topic->setCloseTime((new DateTime())->modify('+1 minute'));
+                }
+
+                $topicService->save($topic);
             } catch (UniqueConstraintViolationException) {
                 return $this->jsonResponse(
-                    data: $user,
-                    message: 'Este username já existe.',
+                    data: $topic,
+                    message: 'Já existe uma cooperativa com este nome.',
                     success: false,
                     statusCode: Response::HTTP_BAD_REQUEST);
             }
 
             return $this->jsonResponse(
-                data: $user,
-                message: 'Usuário criado!',
+                data: $topic,
+                message: 'Tópico criado!',
                 statusCode: Response::HTTP_CREATED);
         }
 
@@ -132,13 +140,13 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Search for a specific user.
+     * Search for a specific topic.
      *
-     * Show a user detailed.
+     * Show a topic detailed.
      */
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns when the user was found.',
+        description: 'Returns when the topic was found.',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'success', type: 'boolean', example: true),
@@ -147,7 +155,7 @@ class UsersController extends MyAbstractFOSRestController
                     type: 'array',
                     items: new OA\Items(
                         ref: new Model(
-                            type: User::class,
+                            type: Topic::class,
                             groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
                         )
                     )
@@ -160,41 +168,78 @@ class UsersController extends MyAbstractFOSRestController
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
-    public function show(User $user): Response
+    public function show(Topic $topic): Response
     {
         return $this->jsonResponse(
-            data: $user,
+            data: $topic,
             serializerGroups: [SerializerGroups::AUDIT, SerializerGroups::DEPTHS]);
     }
 
     /**
-     * Update a specific user.
+     * Search for a specific topic.
      *
-     * Look for an active user and update it.
+     * Show a topic detailed.
      */
-    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\Response(
+        response: Response::HTTP_OK,
+        description: 'Returns when the topic was found.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        ref: new Model(
+                            type: Topic::class,
+                            groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
+                        )
+                    )
+                )
+            ],
+            type: 'object'
+
+        )
+    )]
+    #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
+    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
+    #[Route('/{uuid}/see-votes', name: 'see_votes', methods: ['GET'])]
+    public function seeVotes(Topic $topic, VoteService $voteService): Response
+    {
+
+        return $this->jsonResponse(
+            data: $voteService->countVotes($topic),
+            serializerGroups: [SerializerGroups::AUDIT, SerializerGroups::DEPTHS]);
+    }
+
+    /**
+     * Update a specific topic.
+     *
+     * Look for an active topic and update it.
+     */
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: TopicType::class)))]
     #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
     #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'update', methods: ['PUT'])]
-    public function update(Request $request, UserService $userService, User $user): Response
+    public function update(Request $request, TopicService $topicService, Topic $topic): Response
     {
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(TopicType::class, $topic);
         $form->submit($request->request->all());
 
         if($form->isValid()) {
             try {
-                $userService->save($user);
-            } catch (UniqueConstraintViolationException) {
+                $topicService->updateTopic($topic);
+            } catch (MissingTopicEndTimeException $exception) {
                 return $this->jsonResponse(
-                    data: $user,
-                    message: 'Este username já existe.',
+                    data: $topic,
+                    message: $exception->getMessage(),
                     success: false,
                     statusCode: Response::HTTP_BAD_REQUEST);
             }
 
-            return $this->jsonResponse($user);
+            return $this->jsonResponse($topic);
         }
 
         return $this->jsonResponse(
@@ -205,17 +250,17 @@ class UsersController extends MyAbstractFOSRestController
     }
 
     /**
-     * Delete a specific user.
+     * Delete a specific topic.
      *
-     * Look for an active user and delete it.
+     * Look for an active topic and delete it.
      */
     #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
     #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
     #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'delete', methods: ['DELETE'])]
-    public function delete(UserService $userService, User $user): Response
+    public function delete(TopicService $topicService, Topic $topic): Response
     {
-        $userService->deleteNow($user);
-        return $this->jsonResponse(data: $user);
+        $topicService->deleteNow($topic);
+        return $this->jsonResponse(data: $topic);
     }
 }
