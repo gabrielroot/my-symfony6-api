@@ -52,8 +52,6 @@ abstract class AbstractService
     public function findOneBy(
         array $criteria,
         array $orderBy = null,
-        ?int $limit = null,
-        ?int $offset = 0,
         bool $onlyActive = true)
     {
         return $this->repository->findOneBy($criteria, $orderBy, $onlyActive);

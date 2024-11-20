@@ -124,6 +124,11 @@ abstract class BaseRepository extends ServiceEntityRepository
     private function addCriteriaAndOrder(QueryBuilder $qb, array $criteria, array $orderBy): void
     {
         foreach ($criteria as $column => $value) {
+            if (is_null($value)) {
+                $qb->andWhere($qb->expr()->isNull("entity.$column"));
+                continue;
+            }
+
             $qb
                 ->andWhere("entity.$column = :$column")
                 ->setParameter($column, $value);

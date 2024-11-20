@@ -2,13 +2,11 @@
 
 namespace App\Controller;
 
-use App\Repository\BaseRepository;
 use App\Utils\Enum\SerializerGroups;
 use FOS\RestBundle\Context\Context;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\View\View;
 use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
-use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -82,28 +80,4 @@ abstract class MyAbstractFOSRestController extends AbstractFOSRestController
 
         return $errors;
     }
-
-//    public function jsonResponseByPaginator(
-//        SlidingPagination|PaginatorInterface|Pagination $pagination,
-//        int $statusCode = Response::HTTP_OK,
-//        array $serializerGroups = [],
-//        bool $translate = false,
-//        bool $capitalize = false
-//    ): JsonResponse
-//    {
-//        return $this->json(
-//            array(
-//                'success' => true,
-//                'data' => $this->itemsToArray((array)$pagination->getItems(), $serializerGroups, $translate, $capitalize),
-//                'page' => $pagination->getCurrentPageNumber(),
-//                'lastPage' => $pagination->getPageCount(),
-//                'nextPage' => $pagination->getCurrentPageNumber() < $pagination->getPageCount(),
-//                'previewsPage' => $pagination->getCurrentPageNumber() > 1,
-//                'perPage' => $pagination->getItemNumberPerPage(),
-//                'totalItems' => $pagination->getTotalItemCount(),
-//                'sort' => $pagination->getDirection()
-//            ),
-//            $statusCode
-//        );
-//    }
 }

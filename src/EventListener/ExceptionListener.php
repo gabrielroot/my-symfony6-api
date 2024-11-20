@@ -2,6 +2,9 @@
 
 namespace App\EventListener;
 
+use Knp\Component\Pager\Exception\InvalidValueException;
+use Knp\Component\Pager\Exception\PageNumberInvalidException;
+use Knp\Component\Pager\Exception\PageNumberOutOfRangeException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -23,7 +26,13 @@ class ExceptionListener
         // set the content-type to text to avoid XSS issues
         $response->headers->set('Content-Type', 'application/json; charset=utf-8');
 
-         if ($exception instanceof InvalidArgumentException) {
+        if ($exception instanceof InvalidValueException) {
+            $message = "Erro na paginação: A entidade parece não possuir o campo que você tentou ordenar por.";
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($exception instanceof PageNumberOutOfRangeException || $exception instanceof PageNumberInvalidException) {
+            $message = "Erro na paginação: A página que você solicitou não existe.";
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($exception instanceof InvalidArgumentException) {
             $message = "Requisição mal formada, favor rever os parâmetros e tentar novamente.";
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
         } elseif ($exception instanceof NotFoundHttpException) {

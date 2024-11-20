@@ -5,39 +5,101 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Service\UserService;
+use App\Utils\Enum\SerializerGroups;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Knp\Component\Pager\Exception\InvalidValueException;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
+use Nelmio\ApiDocBundle\Attribute\Model;
 
+#[OA\Tag(name: 'Users')]
 #[Route('/users', name: 'users_')]
 class UsersController extends MyAbstractFOSRestController
 {
+    /**
+     * List the active users.
+     *
+     * This call all the active users, paginated.
+     */
+    #[OA\Parameter(ref: '#/components/parameters/paginatorPage')]
+    #[OA\Parameter(ref: '#/components/parameters/paginatorSort')]
+    #[OA\Parameter(ref: '#/components/parameters/paginatorDirection')]
+    #[OA\Response(
+        response: Response::HTTP_OK,
+        description: 'Returns the users.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        ref: new Model(
+                            type: User::class,
+                            groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
+                        )
+                    )
+                ),
+                new OA\Property(property: 'page', type: 'integer', example: 1),
+                new OA\Property(property: 'lastPage', type: 'integer', example: 2),
+                new OA\Property(property: 'hasNextPage', type: 'boolean', example: true),
+                new OA\Property(property: 'hasPreviewsPage', type: 'boolean',example: false),
+                new OA\Property(property: 'perPage', type: 'integer', example: 5),
+                new OA\Property(property: 'totalItemCount', type: 'integer', example: 54),
+                new OA\Property(property: 'sortDirection', type: 'string', example: 'ASC')
+            ],
+            type: 'object'
+
+        )
+    )]
+    #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
+    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/', name: 'list', methods: ['GET'])]
     public function getUsersAction(
         Request $request,
         UserService $userService,
         PaginatorInterface $paginator): Response
     {
-        try {
-            $pagination = $paginator->paginate(
-                $userService->queryAll(),
-                $request->query->getInt('page', 1),
-                $this->pageLimit);
-        } catch (InvalidValueException $exception) {
-            return $this->jsonResponse(
-                data: [],
-                message: 'Erro na paginação: A entidade parece não possuir o campo que você deseja ordenar.',
-                internalMessage: $exception->getMessage(),
-                success: false,
-                statusCode: Response::HTTP_BAD_REQUEST);
-        }
+        $pagination = $paginator->paginate(
+            $userService->queryAll(),
+            $request->query->getInt('page', 1),
+            $this->pageLimit);
 
         return $this->jsonResponse($pagination);
     }
 
+    /**
+     * Create a new user.
+     *
+     * Just creates a new and fresh user.
+     */
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\Response(
+        response: Response::HTTP_CREATED,
+        description: 'Returns when the user was successfully created.',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: true),
+                new OA\Property(property: 'message', type: 'string', example: 'Usuário criado!'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        ref: new Model(
+                            type: User::class,
+                            groups: [SerializerGroups::DEFAULT, SerializerGroups::AUDIT]
+                        )
+                    )
+                )
+            ],
+            type: 'object'
+
+        )
+    )]
+    #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
+    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/', name: 'create', methods: ['POST'])]
     public function create(Request $request, UserService $userService): Response
     {
@@ -56,7 +118,10 @@ class UsersController extends MyAbstractFOSRestController
                     statusCode: Response::HTTP_BAD_REQUEST);
             }
 
-            return $this->jsonResponse(data: $user, message: Response::HTTP_CREATED);
+            return $this->jsonResponse(
+                data: $user,
+                message: 'Usuário criado!',
+                statusCode: Response::HTTP_CREATED);
         }
 
         return $this->jsonResponse(
@@ -72,6 +137,11 @@ class UsersController extends MyAbstractFOSRestController
         return $this->jsonResponse($user);
     }
 
+    #[OA\RequestBody(content: new OA\JsonContent(ref: new Model(type: UserType::class)))]
+    #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
+    #[OA\Response(ref: '#/components/responses/badRequestResponse', response: Response::HTTP_BAD_REQUEST)]
+    #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
+    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'update', methods: ['PUT'])]
     public function update(Request $request, UserService $userService, User $user): Response
     {
@@ -80,7 +150,7 @@ class UsersController extends MyAbstractFOSRestController
 
         if($form->isValid()) {
             try {
-                $userService->createUser($user);
+                $userService->updateUser($user);
             } catch (UniqueConstraintViolationException) {
                 return $this->jsonResponse(
                     data: $user,
@@ -99,6 +169,9 @@ class UsersController extends MyAbstractFOSRestController
             statusCode: Response::HTTP_BAD_REQUEST);
     }
 
+    #[OA\Response(ref: '#/components/responses/httpOkResponse', response: Response::HTTP_OK)]
+    #[OA\Response(ref: '#/components/responses/notFoundResponse', response: Response::HTTP_NOT_FOUND)]
+    #[OA\Response(ref: '#/components/responses/internalErrorResponse', response: Response::HTTP_INTERNAL_SERVER_ERROR)]
     #[Route('/{uuid}', name: 'delete', methods: ['DELETE'])]
     public function delete(UserService $userService, User $user): Response
     {

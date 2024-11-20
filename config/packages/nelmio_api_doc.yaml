@@ -1,0 +1,101 @@
+nelmio_api_doc:
+    documentation:
+        servers:
+            - url: http://localhost:8090/
+              description: Local API
+        info:
+            title: My Symfony 6 API
+            description: This is an app for manage voting sessions.
+            version: 1.0.0
+        components:
+            parameters:
+                paginatorPage:
+                    name: "page"
+                    in: "query"
+                    required: false
+                    description: "The current page for pagination."
+                    schema:
+                        type: "integer"
+                        example: 1
+                paginatorSort:
+                    name: "sort"
+                    in: "query"
+                    required: false
+                    description: "The field used to sort the results, based on the entity fields."
+                    schema:
+                        type: "string"
+                        example: "entity.username"
+                paginatorDirection:
+                    name: "direction"
+                    in: "query"
+                    required: false
+                    description: "Direction for sorting results (ASC/DESC)."
+                    schema:
+                        type: "string"
+                        example: "ASC"
+            responses:
+                httpOkResponse:
+                    description: "Operação realizada com sucesso"
+                    response: 200
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
+                                properties:
+                                    success:
+                                        type: "boolean"
+                                        example: true
+                                    data:
+                                        type: "object"
+                                        nullable: true
+                badRequestResponse:
+                    description: "Requisição mal formada."
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
+                                properties:
+                                    success:
+                                        type: "boolean"
+                                        example: false
+                                    data:
+                                        type: "object"
+                                        nullable: true
+                notFoundResponse:
+                    description: "Recurso não encontrado."
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
+                                properties:
+                                    success:
+                                        type: "boolean"
+                                        example: false
+                                    message:
+                                        type: "string"
+                                        example: 'O recurso que você tentou acessar não foi encontrado.'
+                                    internalMessage:
+                                        type: "string"
+                                        example: '"App\User" object not found by "EntityValueResolver".'
+                internalErrorResponse:
+                    description: "Internal server error"
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
+                                properties:
+                                    success:
+                                        type: "boolean"
+                                        example: false
+                                    message:
+                                        type: "string"
+                                        example: 'Ocorreu um erro interno.'
+                                    internalMessage:
+                                        type: "string"
+                                        example: 'Call to undefined method UsersController::getName()'
+
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api/v1(?!/doc$) # Accepts routes under /api except /api/doc
+#        host_patterns: # document only routes with a host of the form api.*
+#            - ^api/v1\.

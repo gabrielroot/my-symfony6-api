@@ -55,6 +55,7 @@ trait AuditTrait
     }
 
     #[Serializer\VirtualProperty]
+    #[Serializer\SerializedName('active')]
     #[Serializer\Groups([SerializerGroups::DEFAULT])]
     public function isActive(): bool
     {
