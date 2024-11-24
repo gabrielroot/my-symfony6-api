@@ -39,7 +39,7 @@ class Topic implements IAudit
 
     #[ORM\Column(type: 'datetime')]
     #[Serializer\Groups([SerializerGroups::DEFAULT])]
-    private ?DateTime $closeTime;
+    private ?DateTime $closeTime = null;
 
     #[ORM\ManyToOne(targetEntity: Cooperative::class)]
     #[Assert\NotBlank]

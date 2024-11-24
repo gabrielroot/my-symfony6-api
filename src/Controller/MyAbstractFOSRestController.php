@@ -68,13 +68,7 @@ abstract class MyAbstractFOSRestController extends AbstractFOSRestController
         $errors = [];
 
         foreach ($form->getErrors(true) as $error) {
-            $origin = $error->getOrigin();
-            $key = $origin->getName();
-
-            while ($origin = $origin->getParent()) {
-                $key = $origin->getName() . '_' . $key;
-            }
-
+            $key = $error->getOrigin()->getName();
             $errors[$key][] = $error->getMessage();
         }
 

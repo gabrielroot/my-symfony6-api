@@ -149,7 +149,7 @@ abstract class BaseRepository extends ServiceEntityRepository
 
     public function getOneRandom(bool $onlyActives = false): mixed
     {
-        return $this->newCriteriaActiveQb(false)
+        return $this->newCriteriaActiveQb($onlyActives)
             ->select('DISTINCT entity')
             ->orderBy('RAND()', 'ASC')
             ->getQuery()

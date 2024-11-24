@@ -44,7 +44,6 @@ class User implements IAudit
     private ?Cooperative $cooperative = null;
 
     #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'user')]
-    #[Assert\NotBlank]
     #[Serializer\MaxDepth(1)]
     #[Serializer\Groups([SerializerGroups::DEPTHS])]
     private Collection $votes;

@@ -2,6 +2,8 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\User;
+use App\Repository\CooperativeRepository;
 use App\Repository\UserRepository;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -12,9 +14,26 @@ class UsersControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
 
+    private UserService $userService;
+    private CooperativeRepository $cooperativeRepository;
+    private User $auxUser;
+
     protected function setUp(): void
     {
         $this->client = static::createClient([], ['HTTP_HOST' => $_ENV['APP_URL_BASE']]);
+
+        self::bootKernel();
+        $container = static::getContainer();
+
+        $this->userService = $container->get(UserService::class);
+        $this->cooperativeRepository = $container->get(CooperativeRepository::class);
+
+        $this->auxUser = (new User())
+            ->setName('TestUser')
+            ->setUsername('test_user')
+            ->setCooperative($this->cooperativeRepository->getOneRandom(onlyActives : true));
+
+        $this->userService->save($this->auxUser);
     }
 
     /**
@@ -37,13 +56,8 @@ class UsersControllerTest extends WebTestCase
      */
     public function testShow(): void
     {
-        self::bootKernel();
-        $container = static::getContainer();
-        $userService = $container->get(UserService::class);
-        $dbUser = $userService->find(1);
-
         $client = $this->client;
-        $client->request('GET', "/users/{$dbUser->getUuid()}");
+        $client->request('GET', "/users/{$this->auxUser->getUuid()}");
 
         $this->assertResponseIsSuccessful();
 
@@ -51,7 +65,7 @@ class UsersControllerTest extends WebTestCase
         $users = json_decode($responseContent, true);
 
         $this->assertIsArray($users['data']);
-        $this->assertEquals($dbUser->getUuid(), $users['data']['uuid']);
+        $this->assertEquals($this->auxUser->getUuid(), $users['data']['uuid']);
     }
 
     /**
@@ -59,13 +73,8 @@ class UsersControllerTest extends WebTestCase
      */
     public function testDelete(): void
     {
-        self::bootKernel();
-        $container = static::getContainer();
-        $userService = $container->get(UserService::class);
-        $dbUser = $userService->find(1);
-
         $client = $this->client;
-        $client->request('DELETE', "/users/{$dbUser->getUuid()}");
+        $client->request('DELETE', "/users/{$this->auxUser->getUuid()}");
 
         $this->assertResponseIsSuccessful();
 
@@ -73,11 +82,19 @@ class UsersControllerTest extends WebTestCase
         $users = json_decode($responseContent, true);
 
         $this->assertIsArray($users['data']);
-        $this->assertEquals($dbUser->getUuid(), $users['data']['uuid']);
+        $this->assertEquals($this->auxUser->getUuid(), $users['data']['uuid']);
         $this->assertFalse($users['data']['active']);
+    }
 
-        //User was already deleted
-        $client->request('DELETE', "/users/{$dbUser->getUuid()}");
+    /**
+     * @testdox Delete: Try to delete an already deleted (non existent) user.
+     */
+    public function testAlreadyDeleted(): void
+    {
+        $client = $this->client;
+        $client->request('DELETE', "/users/{$this->auxUser->getUuid()}");
+        //Topic was already deleted
+        $client->request('DELETE', "/users/{$this->auxUser->getUuid()}");
 
         $responseContent = $client->getResponse()->getContent();
         $notFoundResponse = json_decode($responseContent, true);
@@ -92,7 +109,10 @@ class UsersControllerTest extends WebTestCase
     public function testCreate(): void
     {
         $client = $this->client;
-        $body = ['username' => 'gabrielroot', 'name' => "Gabriel"];
+        $body = [
+            'username' => 'gabrielroot',
+            'name' => "Gabriel",
+            'cooperative_uuid' => $this->cooperativeRepository->getOneRandom(onlyActives: true)->getUuid()];
         $client->request('POST', "/users/", $body);
 
         $this->assertResponseIsSuccessful();
@@ -102,7 +122,19 @@ class UsersControllerTest extends WebTestCase
 
         $this->assertIsArray($users['data']);
         $this->assertEquals('gabrielroot', $users['data']['username']);
+    }
 
+    /**
+     * @testdox Create: Trying to duplicate an user.
+     */
+    public function testCreatingDuplicated(): void
+    {
+        $client = $this->client;
+        $body = [
+            'username' => 'gabrielroot',
+            'name' => "Gabriel",
+            'cooperative_uuid' => $this->cooperativeRepository->getOneRandom(onlyActives: true)->getUuid()];
+        $client->request('POST', "/users/", $body);
         //User already exists
         $client->request('POST', "/users/", $body);
 
@@ -118,14 +150,12 @@ class UsersControllerTest extends WebTestCase
      */
     public function testUpdate(): void
     {
-        self::bootKernel();
-        $container = static::getContainer();
-        $userService = $container->get(UserService::class);
-        $dbUser = $userService->find(id: 1, onlyActive: false);
-
         $client = $this->client;
-        $body = ['username' => 'gabrielroot', 'name' => "Gabriel"];
-        $client->request('PUT', "/users/{$dbUser->getUuid()}", $body);
+        $body = [
+            'username' => 'gabrielroot',
+            'name' => "Gabriel",
+            'cooperative_uuid' => $this->auxUser->getCooperative()->getUuid()];
+        $client->request('PUT', "/users/{$this->auxUser->getUuid()}", $body);
 
         $this->assertResponseIsSuccessful();
 
@@ -136,8 +166,13 @@ class UsersControllerTest extends WebTestCase
         $this->assertEquals('gabrielroot', $users['data']['username']);
 
         //Trying to change the username to another existing username
-        $dbUser = $userService->find(id: 2, onlyActive: false);
-        $client->request('PUT', "/users/{$dbUser->getUuid()}", $body);
+        $existingUser = (new User())
+            ->setName('TestUser')
+            ->setUsername('test_user')
+            ->setCooperative($this->cooperativeRepository->getOneRandom(onlyActives : true));
+        $this->userService->save($existingUser);
+
+        $client->request('PUT', "/users/{$existingUser->getUuid()}", $body);
 
         $responseContent = $client->getResponse()->getContent();
         $badRequest = json_decode($responseContent, true);

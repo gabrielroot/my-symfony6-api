@@ -51,6 +51,11 @@ abstract class BaseFixtures extends Fixture
         return $this->names[array_rand($this->names)] . rand(1, 1000);
     }
 
+    protected function generateCooperativeName(): string
+    {
+        return $this->companyName[array_rand($this->companyName)] . rand(1, 1000);
+    }
+
     protected function generateUsername(): string
     {
         return $this->usernames[array_rand($this->usernames)] . rand(1, 1000000);

@@ -112,19 +112,7 @@ class TopicController extends MyAbstractFOSRestController
         $form->submit($request->request->all());
 
         if($form->isValid()) {
-            try {
-                if (null === $topic->getCloseTime()) {
-                    $topic->setCloseTime((new DateTime())->modify('+1 minute'));
-                }
-
-                $topicService->save($topic);
-            } catch (UniqueConstraintViolationException) {
-                return $this->jsonResponse(
-                    data: $topic,
-                    message: 'Já existe uma cooperativa com este nome.',
-                    success: false,
-                    statusCode: Response::HTTP_BAD_REQUEST);
-            }
+            $topicService->createTopic($topic);
 
             return $this->jsonResponse(
                 data: $topic,
