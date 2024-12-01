@@ -1,4 +1,8 @@
-### Executando o projeto
+# My Symfony 6 API
+
+![API DOC preview](docs/APIDOC-preview.png "API DOC preview")
+
+### Starting the project
 
     //Start the app
     docker-compose up -d --build
