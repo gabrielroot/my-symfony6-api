@@ -3,20 +3,17 @@
 namespace App\Controller;
 
 use App\Entity\Topic;
-use App\Exception\MissingTopicEndTimeException;
+use App\Exception\BusinessRule\MissingTopicEndTimeException;
 use App\Form\TopicType;
 use App\Service\TopicService;
 use App\Service\VoteService;
 use App\Utils\Enum\SerializerGroups;
-use DateTime;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 use Knp\Component\Pager\PaginatorInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Attributes as OA;
-use Nelmio\ApiDocBundle\Attribute\Model;
 
 #[OA\Tag(name: 'Topics')]
 #[Route('/topics', name: 'topics_')]

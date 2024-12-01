@@ -43,6 +43,7 @@ class UserType extends AbstractType
                     'example' => 'uuid-uuid-uuid-uuid',
                 ]
             ])
+            ->add('address', AddressType::class, [])
         ;
     }
 

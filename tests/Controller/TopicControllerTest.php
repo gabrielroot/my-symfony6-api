@@ -3,7 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Topic;
-use App\Exception\MissingTopicEndTimeException;
+use App\Exception\BusinessRule\MissingTopicEndTimeException;
 use App\Repository\CooperativeRepository;
 use App\Service\TopicService;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;

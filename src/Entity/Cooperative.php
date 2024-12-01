@@ -40,6 +40,12 @@ class Cooperative implements IAudit
     #[Serializer\Groups([SerializerGroups::DEPTHS])]
     private Collection|null $users = null;
 
+    #[ORM\OneToOne(targetEntity: Address::class, inversedBy: 'cooperative', cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Serializer\MaxDepth(1)]
+    #[Serializer\Groups([SerializerGroups::DEPTHS])]
+    private Address $address;
+
     public function __construct()
     {
         $this->users = new ArrayCollection();
@@ -86,6 +92,17 @@ class Cooperative implements IAudit
     public function setUsers(?Collection $users): Cooperative
     {
         $this->users = $users;
+        return $this;
+    }
+
+    public function getAddress(): Address
+    {
+        return $this->address;
+    }
+
+    public function setAddress(Address $address): Topic
+    {
+        $this->address = $address;
         return $this;
     }
 }

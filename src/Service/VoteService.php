@@ -4,12 +4,11 @@ namespace App\Service;
 
 use App\Entity\Topic;
 use App\Entity\Vote;
-use App\Exception\MemberAlreadyVotedException;
-use App\Exception\SessionClosedToVoteException;
-use App\Exception\TopicNotFromMemberCooperativeException;
+use App\Exception\BusinessRule\MemberAlreadyVotedException;
+use App\Exception\BusinessRule\SessionClosedToVoteException;
+use App\Exception\BusinessRule\TopicNotFromMemberCooperativeException;
 use App\Repository\VoteRepository;
 use App\Utils\Enum\VoteChoice;
-use DateInterval;
 use DateTime;
 
 class VoteService extends AbstractService

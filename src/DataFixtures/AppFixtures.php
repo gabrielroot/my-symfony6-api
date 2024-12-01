@@ -40,6 +40,11 @@ class AppFixtures extends BaseFixtures
         $this->users = [$this->createOneUser(), $this->createOneUser(), $this->createOneUser()];
         $this->topics = [$this->createOneTopic(), $this->createOneTopic(), $this->createOneTopic()];
 
+//TODO: Tarefa Bônus 1 - Integração
+//TODO: Tarefa Bônus 3 - Performance
+//TODO: Tarefa Bônus 4 - Versionamento da API
+
+//TODO: Dúvida: Cada pauta aceita mais de uma sessão de votação? Ex: "Eleger um novo presidente."
     }
 
     public function load(ObjectManager $manager): void

@@ -44,7 +44,10 @@ class ExceptionListener
             $response->setStatusCode($exception->getStatusCode());
             $response->headers->replace($exception->getHeaders());
         } else {
-            $response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+            $response->setStatusCode((array_key_exists($exception->getCode(), Response::$statusTexts))
+                ? $exception->getCode()
+                : Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
         $response->setContent(json_encode([
@@ -53,6 +56,6 @@ class ExceptionListener
             'success' => false]));
 
         // sends the modified response object to the event
-        $event->setResponse($response);
+//        $event->setResponse($response);
     }
 }

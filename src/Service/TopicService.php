@@ -3,7 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Topic;
-use App\Exception\MissingTopicEndTimeException;
+use App\Exception\BusinessRule\MissingTopicEndTimeException;
 use App\Repository\TopicRepository;
 use DateTime;
 

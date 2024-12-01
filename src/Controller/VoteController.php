@@ -3,18 +3,18 @@
 namespace App\Controller;
 
 use App\Entity\Vote;
-use App\Exception\MemberAlreadyVotedException;
-use App\Exception\SessionClosedToVoteException;
-use App\Exception\TopicNotFromMemberCooperativeException;
+use App\Exception\BusinessRule\MemberAlreadyVotedException;
+use App\Exception\BusinessRule\SessionClosedToVoteException;
+use App\Exception\BusinessRule\TopicNotFromMemberCooperativeException;
 use App\Form\VoteType;
 use App\Service\VoteService;
 use App\Utils\Enum\SerializerGroups;
 use Knp\Component\Pager\PaginatorInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Attributes as OA;
-use Nelmio\ApiDocBundle\Attribute\Model;
 
 #[OA\Tag(name: 'Votes')]
 #[Route('/votes', name: 'votes_')]

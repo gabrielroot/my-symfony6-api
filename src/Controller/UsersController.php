@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\UserType;
+use App\Integration\ViaCep\ViaCepIntegration;
 use App\Service\UserService;
 use App\Utils\Enum\SerializerGroups;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -109,7 +110,7 @@ class UsersController extends MyAbstractFOSRestController
 
         if($form->isValid()) {
             try {
-                $userService->save($user);
+                $userService->createUser($user);
             } catch (UniqueConstraintViolationException) {
                 return $this->jsonResponse(
                     data: $user,

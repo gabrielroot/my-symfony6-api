@@ -12,6 +12,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.3",
         "friendsofsymfony/rest-bundle": "^3.7",
+        "guzzlehttp/guzzle": "^7.0",
         "jms/serializer-bundle": "*",
         "knplabs/knp-paginator-bundle": "^6.6",
         "nelmio/api-doc-bundle": "^4.33",

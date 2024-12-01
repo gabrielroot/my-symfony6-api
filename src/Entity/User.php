@@ -48,6 +48,12 @@ class User implements IAudit
     #[Serializer\Groups([SerializerGroups::DEPTHS])]
     private Collection $votes;
 
+    #[ORM\OneToOne(targetEntity: Address::class, inversedBy: 'user', cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Serializer\MaxDepth(1)]
+    #[Serializer\Groups([SerializerGroups::DEPTHS])]
+    private Address $address;
+
     public function __construct()
     {
 
@@ -110,6 +116,17 @@ class User implements IAudit
     public function setVotes(Collection $votes): User
     {
         $this->votes = $votes;
+        return $this;
+    }
+
+    public function getAddress(): Address
+    {
+        return $this->address;
+    }
+
+    public function setAddress(Address $address): User
+    {
+        $this->address = $address;
         return $this;
     }
 }
