@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/gabrielroot/mytour:latest
+    image: ghcr.io/gabrielroot/my-symfony6-api:latest
     environment:
       - APP_ENV=prod
       - APP_DEBUG=0
