@@ -119,7 +119,7 @@ COPY --from=composer-build --chown=www:www /app/templates ./templates
 COPY --from=composer-build --chown=www:www /app/translations ./translations
 COPY --from=composer-build --chown=www:www /app/vendor ./vendor
 COPY --from=composer-build --chown=www:www /app/composer.json ./composer.json
-#COPY --from=composer-build --chown=www:www /app/.env ./.env
+COPY --from=composer-build --chown=www:www /app/.env ./.env
 COPY --from=composer-build --chown=www:www /app/migrations ./migrations
 
 # Setup directories and permissions in single layer

@@ -69,5 +69,3 @@
 .docker/mysql/data
 
 .idea
-
-.env
