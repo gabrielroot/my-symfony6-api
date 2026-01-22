@@ -67,3 +67,7 @@
 ###< symfony/asset-mapper ###
 
 .docker/mysql/data
+
+.idea
+
+.env

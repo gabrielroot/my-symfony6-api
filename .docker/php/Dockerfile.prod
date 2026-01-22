@@ -1,0 +1,145 @@
+# ============================================
+# Stage 1: PHP Extensions Builder
+# ============================================
+FROM php:8.2-fpm-alpine AS php-extensions
+
+# Install build dependencies and compile extensions
+RUN apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libzip-dev \
+    icu-dev \
+    oniguruma-dev \
+    libxslt-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_mysql \
+        zip \
+        xsl \
+        gd \
+        intl \
+        opcache \
+        exif \
+        mbstring \
+    && apk del .build-deps \
+    && rm -rf /tmp/* /var/cache/apk/*
+
+# ============================================
+# Stage 2: Composer Dependencies
+# ============================================
+FROM php-extensions AS composer-build
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apk add --no-cache git unzip
+
+WORKDIR /app
+
+# Copy only files needed for composer install (better caching)
+COPY composer.json composer.lock* ./
+COPY src/ ./src/
+
+# Install production dependencies
+RUN composer install \
+    --no-interaction \
+    --prefer-dist \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --ignore-platform-reqs
+
+# Copy the rest of the app and finalize autoloader
+COPY . .
+
+# Optimize autoloader and clean vendor in one layer
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
+    && rm -rf /root/.composer \
+    # Remove unnecessary vendor files
+    && find /app/vendor -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name "CHANGELOG*" -o -name "UPGRADE*" -o -name "phpunit.xml*" -o -name ".gitignore" -o -name ".gitattributes" -o -name "composer.json" -o -name "*.dist" \) -delete \
+    && find /app/vendor -type d \( -name ".git" -o -name "tests" -o -name "Tests" -o -name "test" -o -name "docs" -o -name "doc" -o -name "examples" -o -name "Example" \) -exec rm -rf {} + 2>/dev/null || true \
+    # Remove source maps and unnecessary JS
+    && find /app -name "*.map" -delete 2>/dev/null || true \
+    # Remove empty directories
+    && find /app/vendor -type d -empty -delete 2>/dev/null || true
+
+# ============================================
+# Stage 3: Final production image (minimal)
+# ============================================
+FROM php:8.2-fpm-alpine AS production
+ARG TIMEZONE=America/Sao_Paulo
+
+# Install minimal runtime dependencies
+RUN apk add --no-cache \
+    libzip \
+    freetype \
+    libpng \
+    libjpeg-turbo \
+    icu-libs \
+    oniguruma \
+    libxslt \
+    fcgi \
+    tzdata \
+    && rm -rf /var/cache/apk/* /tmp/* \
+    # Remove unnecessary locales to reduce icu-libs size
+    && rm -rf /usr/share/icu/*/lang /usr/share/icu/*/region /usr/share/icu/*/unit 2>/dev/null || true
+
+# Copy pre-built PHP extensions (only .so files needed)
+COPY --from=php-extensions /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=php-extensions /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+
+# Set timezone
+RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
+    && echo ${TIMEZONE} > /etc/timezone \
+    # Remove other timezones to save space (keep only needed)
+    && find /usr/share/zoneinfo -mindepth 1 -maxdepth 1 -type d ! -name 'America' ! -name 'UTC' -exec rm -rf {} + 2>/dev/null || true
+
+# Copy PHP configuration files
+COPY .docker/php/php.ini /usr/local/etc/php/conf.d/docker-php-config.ini
+COPY .docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY .docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copy healthcheck script
+COPY .docker/php/php-fpm-healthcheck /usr/local/bin/php-fpm-healthcheck
+RUN chmod +x /usr/local/bin/php-fpm-healthcheck
+
+# Create non-root user
+RUN addgroup -g 1000 www \
+    && adduser -u 1000 -G www -s /bin/sh -D www
+
+WORKDIR /var/www/symfony
+
+# Copy only necessary application files from composer-build
+COPY --from=composer-build --chown=www:www /app/bin ./bin
+COPY --from=composer-build --chown=www:www /app/config ./config
+COPY --from=composer-build --chown=www:www /app/public ./public
+COPY --from=composer-build --chown=www:www /app/src ./src
+COPY --from=composer-build --chown=www:www /app/templates ./templates
+COPY --from=composer-build --chown=www:www /app/translations ./translations
+COPY --from=composer-build --chown=www:www /app/vendor ./vendor
+COPY --from=composer-build --chown=www:www /app/composer.json ./composer.json
+COPY --from=composer-build --chown=www:www /app/.env ./.env
+COPY --from=composer-build --chown=www:www /app/migrations ./migrations
+
+# Setup directories and permissions in single layer
+RUN mkdir -p var/cache/prod var/log \
+    && chown -R www:www /var/www/symfony \
+    && chmod -R 755 var \
+    && chmod -R 777 /tmp
+
+# Copy entrypoint script
+COPY .docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Warmup cache
+USER www
+RUN APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-debug 2>/dev/null || true
+
+USER root
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+EXPOSE 8081
+
+CMD ["php-fpm"]

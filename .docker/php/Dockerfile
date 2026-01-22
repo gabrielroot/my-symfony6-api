@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-buster
+FROM php:8.2-fpm
 ARG TIMEZONE
 
 COPY php.ini /usr/local/etc/php/conf.d/docker-php-config.ini
@@ -41,7 +41,7 @@ RUN groupadd -g 1000 www
 RUN useradd -u 1000 -ms /bin/bash -g 1000 www
 
 # Copy existing application directory permissions
-COPY --chown=www:www . /var/www/symfony
+#COPY --chown=www:www . /var/www/symfony
 
 RUN chown www:www-data -R /var/www/symfony
 RUN chmod 755 -R /var/www/symfony

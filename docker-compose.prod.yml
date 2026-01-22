@@ -1,0 +1,39 @@
+services:
+  app:
+    image: ghcr.io/gabrielroot/mytour:latest
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+    restart: unless-stopped
+    volumes:
+      - ./public:/var/www/symfony/public
+      - symfony_app_var:/var/www/symfony/var
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm-healthcheck || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - symfony_app
+
+  nginx:
+    build:
+      context: .
+      dockerfile: .docker/nginx/Dockerfile.prod
+    expose:
+      - "80"
+    restart: unless-stopped
+    volumes:
+      - ./public:/var/www/symfony/public
+    networks:
+      - symfony_app
+    depends_on:
+      - app
+
+volumes:
+  symfony_app_var:
+  db_data:
+
+networks:
+  symfony_app:
