@@ -13,5 +13,9 @@ chmod -R 777 /var/www/symfony/var/cache 2>/dev/null || true
 
 php bin/console d:m:migrate -n
 
+if [ "$APP_ENV" = "prod" ]; then
+    php bin/console cache:warmup --no-debug 2>/dev/null || true
+fi
+
 # Execute the main container command (e.g., php-fpm)
 exec "$@"
