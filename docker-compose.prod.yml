@@ -29,7 +29,7 @@ services:
     networks:
       - symfony_app
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Accept: text/html", "http://localhost/api/doc"]
+      test: ["CMD", "curl", "-f", "-H", "Accept: text/html", "https://api6.grwxtech.com/api/doc"]
       interval: 30s
       timeout: 10s
       retries: 3
