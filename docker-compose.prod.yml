@@ -1,5 +1,5 @@
 services:
-  app:
+  app_api6:
     build:
       context: .
       dockerfile: .docker/php/Dockerfile.prod
@@ -21,7 +21,7 @@ services:
       - symfony_app
       - dokploy-network
 
-  nginx:
+  nginx_api6:
     build:
       context: .
       dockerfile: .docker/php/Dockerfile.prod
@@ -37,7 +37,7 @@ services:
       timeout: 10s
       retries: 3
     depends_on:
-      - app
+      - app_api6
 
 volumes:
   symfony_app_var:
