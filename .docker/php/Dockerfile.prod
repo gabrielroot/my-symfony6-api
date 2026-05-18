@@ -65,7 +65,7 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
     && find /app/vendor -type d -empty -delete 2>/dev/null || true
 
 # ============================================
-# Stage 3: Final production image (minimal)
+# Stage 4: Final production image (minimal)
 # ============================================
 FROM php:8.2-fpm-alpine AS production
 ARG TIMEZONE=America/Sao_Paulo
@@ -108,7 +108,7 @@ RUN chmod +x /usr/local/bin/php-fpm-healthcheck
 RUN addgroup -g 1000 www \
     && adduser -u 1000 -G www -s /bin/sh -D www
 
-WORKDIR /var/www/symfony
+WORKDIR /var/www
 
 # Copy only necessary application files from composer-build
 COPY --from=composer-build --chown=www:www /app/bin ./bin
@@ -119,26 +119,36 @@ COPY --from=composer-build --chown=www:www /app/templates ./templates
 COPY --from=composer-build --chown=www:www /app/translations ./translations
 COPY --from=composer-build --chown=www:www /app/vendor ./vendor
 COPY --from=composer-build --chown=www:www /app/composer.json ./composer.json
-COPY --from=composer-build --chown=www:www /app/.env ./.env
 COPY --from=composer-build --chown=www:www /app/migrations ./migrations
+#COPY --from=composer-build --chown=www:www /app/.env ./.env
+COPY --from=composer-build --chown=www:www /app/.docker ./.docker
+COPY --from=composer-build --chown=www:www /app/.docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Avoid loading the entire .env file in production, set only necessary variables
+# Then, allow overriding them via environment variables at runtime if needed
+RUN echo 'APP_ENV=prod' > /var/www/.env && echo 'APP_DEBUG=false' > /var/www/.env
 
 # Setup directories and permissions in single layer
 RUN mkdir -p var/cache/prod var/log \
-    && chown -R www:www /var/www/symfony \
+    && chown -R www:www /var/www \
     && chmod -R 755 var \
     && chmod -R 777 /tmp
 
-# Copy entrypoint script
-COPY .docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Warmup cache
 USER www
+RUN php bin/console cache:warmup --no-debug --env=prod  2>/dev/null || true
 
 USER root
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-EXPOSE 8081
+EXPOSE 9000
 
 CMD ["php-fpm"]
+
+# nginx
+FROM nginx:alpine AS nginx
+
+COPY --from=production /var/www/public /var/www/public
+COPY --from=production /var/www/.docker/nginx/conf.d/app.conf /etc/nginx/conf.d/default.conf
