@@ -1,15 +1,17 @@
 services:
   app_api6:
-    build:
-      context: .
-      dockerfile: .docker/php/Dockerfile.prod
-      target: production
+    image: ${APP_IMAGE}
     environment:
-      APP_ENV: prod
-      APP_DEBUG: false
+      APP_ENV: ${APP_ENV:-prod}
+      APP_DEBUG: ${APP_DEBUG:-0}
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+      TIMEZONE: ${TIMEZONE:-America/Fortaleza}
+      LOCK_DSN: ${LOCK_DSN:-flock}
+      APP_IMAGE: ${APP_IMAGE:-registry.gitlab.grwxtech.com/gabrielroot/api6.grwxtech.com/app:latest}
+      NGINX_IMAGE: ${NGINX_IMAGE:-registry.gitlab.grwxtech.com/gabrielroot/api6.grwxtech.com/nginx:latest}
     restart: unless-stopped
     volumes:
-      - ./.env.local:/var/www/.env.local:ro
       - symfony_app_var:/var/www/var
     healthcheck:
       test: ["CMD-SHELL", "php-fpm-healthcheck || exit 1"]
@@ -22,10 +24,7 @@ services:
       - dokploy-network
 
   nginx_api6:
-    build:
-      context: .
-      dockerfile: .docker/php/Dockerfile.prod
-      target: nginx
+    image: ${NGINX_IMAGE}
     expose:
       - "80"
     restart: unless-stopped
